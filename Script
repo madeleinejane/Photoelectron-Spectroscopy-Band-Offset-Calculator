@@ -1,0 +1,565 @@
+#Imports
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog as fd
+from tkinter.messagebox import showinfo
+from tkinter import Tk
+from tkinter.filedialog import askdirectory
+from  tkinter import *
+from tkinter.ttk import *
+from tkinter import StringVar, IntVar
+import sys
+import os
+import numpy as np
+import math
+from scipy import stats
+from numpy import polyfit
+from scipy.signal import savgol_filter
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
+from PIL import ImageTk, Image, ImageGrab, PngImagePlugin
+import matplotlib.pyplot as plt
+from matplotlib.widgets import SpanSelector
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from matplotlib.widgets import SpanSelector
+import ast
+
+#Opening GUI
+window = tk.Tk()
+window.geometry('880x650')
+window.title('Band Gap and VBM Calculator')
+
+
+IntroFrame = Frame(window)
+IntroFrame.pack(anchor = N, side = 'left', padx = 5, pady = 5)
+
+RemainingInputsFrame = Frame(window)
+RemainingInputsFrame.pack(anchor = N, side = 'left', padx = 5, pady = 5)
+
+row1 = Frame(RemainingInputsFrame)
+row1.pack(anchor = N, side = 'top')
+row2 = Frame(RemainingInputsFrame)
+row2.pack(anchor = N, side = 'top')
+row3 = Frame(RemainingInputsFrame)
+row3.pack(anchor = N, side = 'top')
+row4 = Frame(RemainingInputsFrame)
+row4.pack(anchor = N, side = 'top')
+row5 = Frame(RemainingInputsFrame)
+row5.pack(anchor = N, side = 'top')
+row6 = Frame(RemainingInputsFrame)
+row6.pack(anchor = N, side = 'top')
+row7 = Frame(RemainingInputsFrame)
+row7.pack(anchor = N, side = 'top')
+row8 = Frame(RemainingInputsFrame)
+row8.pack(anchor = N, side = 'top')
+row9 = Frame(RemainingInputsFrame)
+row9.pack(anchor = N, side = 'top')
+row10 = Frame(RemainingInputsFrame)
+row10.pack(anchor = N, side = 'top')
+row11 = Frame(RemainingInputsFrame)
+row11.pack(anchor = N, side = 'top')
+row12 = Frame(RemainingInputsFrame)
+row12.pack(anchor = N, side = 'top')
+row13 = Frame(RemainingInputsFrame)
+row13.pack(anchor = N, side = 'top')
+row14 = Frame(RemainingInputsFrame)
+row14.pack(anchor = N, side = 'top')
+row15 = Frame(RemainingInputsFrame)
+row15.pack(anchor = N, side = 'top')
+row16 = Frame(RemainingInputsFrame)
+row16.pack(anchor = N, side = 'top')
+
+
+#IntroFrame 
+Overview = tk.Label(IntroFrame, text = 'OVERVIEW OF PROGRAM:\nThis program is designed to provide consistency\nin XPS and UPS data fitting and by extension in\nVBM and band gap calculations. The program will\nfit every possible line within a user-specified\n interval to the background and main peaks.\nThe program will then calculate the error associated\nwith every possible point of intersection\nbetween the two lines and return the intersection point\nwith the lowest standard deviation.', font = ("Times New Roman",  10), fg = 'purple')
+Overview.pack(padx = 5, pady = 5, anchor = N, side = 'top')
+
+Limitations = tk.Label(IntroFrame, text = 'LIMITATIONS:\nNote that the ability of this program to return\naccurate band gap and VBM calculations is partially\nreliant on the accuracy of its user in specifying the\ngeneral area of data in which to fit lines and the\nrange over which to fit each line.', font = ("Times New Roman",  10), fg = 'purple')
+Limitations.pack(padx = 5, pady = 5, anchor = N, side = 'top')
+
+def mode_select ():
+    global mode
+    mode = (mo.get())
+l1 = tk.Label(row2, text = "Mode:", font = ("Times New Roman bold", 10))
+l1.pack(padx = 5, pady = 5, anchor = N, side = 'left')
+mo = StringVar()
+mode = StringVar()
+radioselect = Radiobutton(row2, text="XPS", variable=mo, value = "XPS", command=mode_select)
+radioselect.pack(padx = 0, pady = 5, anchor = N, side = "left")
+radioselect2 = Radiobutton(row2, text="UPS", variable=mo, value = "UPS", command=mode_select)
+radioselect2.pack(padx = 0, pady = 5, anchor = N, side = "left")
+
+tk.Label(row8, text = '\n').pack(padx = 5, pady = 5)
+tk.Label(row9, text = 'Optional Inputs:', font = ("Times New Roman bold", 10), fg = "purple").pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+
+def CBM_enter():
+    global Ec
+    Ec = e2.get()
+Ec = DoubleVar()
+tk.Label(row10, text = 'CBM (eV): ', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+e2 = tk.Entry(row10, width = 5)
+e2.insert(0,"0")
+e2.pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+
+def err_CBM_enter():
+    global sigma_Ec
+    sigma_Ec = e3.get()
+sigma_Ec = DoubleVar()
+tk.Label(row11, text = 'Error in CBM (eV): ', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+e3 = tk.Entry(row11, width = 5)
+e3.insert(0,"0")
+e3.pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+
+def peak_cent_ent():
+    global peak_center
+    peak_center = e4.get()
+peak_center = DoubleVar()
+tk.Label(row12, text = 'Loss Peak Center (eV): ', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+e4 = tk.Entry(row12, width = 5)
+e4.insert(0, "0")
+e4.pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+
+def err_peakcent_ent():
+    global sigma_peakcenter
+    sigma_peakcenter = e5.get()
+sigma_peakcenter = DoubleVar()
+tk.Label(row13, text = 'Err Loss Peak Center (eV): ', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+e5 = tk.Entry(row13, width = 5)
+e5.insert(0, "0")
+e5.pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+
+tk.Label(row13, text = '\n').pack(padx = 5, pady = 5)
+def windest():
+    window.destroy()
+    
+def inputfile():
+    global BE
+    global CPS
+    open_file = filedialog.askopenfilenames(filetypes=[("EPS Data Files", ".txt")]) # returns a tuple with opened file's complete path
+    file_path = (open_file)
+    np.set_printoptions(threshold=np.inf)
+    binden = []
+    countsper = []
+    file = open(r'{}'.format(open_file[0]))
+    data = file.readlines()[8:]
+    for line in data:
+        line = line.strip()
+        values = line.split()
+        bindingenergy = values[2]
+        cps = values[3]
+        binden.append(bindingenergy)
+        countsper.append(cps)
+    BE = []
+    CPS = []
+    for data in binden:
+        data = float(data)
+        BE.append(data)
+    for entry in countsper:
+        entry = float(entry)
+        CPS.append(entry)
+BE = StringVar()
+CPS = StringVar()
+
+InputFile_button = tk.Button(row15, text = "Input File", font = ("Times New Roman bold", 10), bg = "lightblue", command = lambda:[CBM_enter(), err_CBM_enter(), peak_cent_ent(), err_peakcent_ent(), windest(), inputfile()]).pack(padx = 5, pady = 5, anchor = NW, side = 'left')
+window.mainloop() 
+
+#USER SELECTS "ELIGIBLE" REGIONS OF GRAPH
+
+class SelReg:
+    def __init__(self, master, l_val_pair):
+        # Create a container
+        frame = tk.Frame(master)
+        # Create fields
+        self.save_region1_button = tk.Button(frame,text="Save Range for Region 1", command = self.save_region1)
+        self.save_region1_button.pack(side="left")
+        self.save_region2_button = tk.Button(frame,text="Save Range for Region 2", command = self.save_region2)
+        self.save_region2_button.pack(side="left")
+
+        self.listbox = tk.Listbox(master)
+        self.listbox.pack(side='bottom', fill=tk.X) 
+
+        #Define figure
+        self.fig = Figure()
+        self.ax = self.fig.add_subplot(111)
+        #Sample data for a line
+        self.x = BE
+        self.y = CPS
+        self.ax.scatter(self.x, self.y, color = 'black', s = 0.25)
+        self.ax.set_xlim(min(BE)-0.5, max(BE) + 0.5)
+        self.ax.set_ylim(min(CPS)-0.25, max(CPS)+.25)
+        self.ax.invert_xaxis()
+
+        self.l_spans = [self.ax.axes.axvspan(val_pair[0],val_pair[1], facecolor='red', alpha=0.3, label=val_pair)
+                    for val_pair in l_val_pair]
+
+        #Create a listbox      
+        [self.listbox.delete(0,tk.END)]
+        [self.listbox.insert(tk.END, self.l_spans[-1].get_label())]
+        #Plot figure
+        self.canvas = FigureCanvasTkAgg(self.fig,master=master)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
+        frame.pack()
+
+        #Use span selector
+        self.span = SpanSelector(self.ax, self.sel_span, 'horizontal', useblit=True,
+                             rectprops=dict(alpha=0.5, facecolor='yellow'), span_stays=False)
+
+        #Connect
+        self.canvas.mpl_connect('key_press_event', self.span)
+
+
+    def sel_span(self, xmin, xmax):
+        #Clear visualisation        
+        for span in self.l_spans:
+           try:
+               span.remove()
+           except:
+               pass
+        self.canvas.draw_idle()        
+
+        
+        span = self.ax.axes.axvspan(xmin,xmax, alpha = 0.5, facecolor = 'yellow', label = [xmin, xmax])
+        #Add actual span to list of spans
+        self.l_spans.append(span)
+
+        [self.listbox.delete(0,tk.END)]
+        [self.listbox.insert(tk.END, self.l_spans[-1].get_label())]   
+
+
+    def remove_spans(self):
+        self.listbox.delete(0,tk.END)
+
+        for span in self.l_spans:
+           try:
+               span.remove()
+           except:
+               pass
+        self.canvas.draw_idle()
+        
+    def save_region1(self):
+        global xminR1
+        global xmaxR1
+        coordsR1 = self.l_spans[-1].get_label().strip('[ ]').split(',')
+        xminR1 = float(coordsR1[0])
+        xmaxR1 = float(coordsR1[1])
+        
+    def save_region2(self):
+        global xminR2
+        global xmaxR2
+        coordsR2 = self.l_spans[-1].get_label().strip('[ ]').split(',')
+        xminR2 = float(coordsR2[0])
+        xmaxR2 = float(coordsR2[1])
+    
+list_vals= [[0,0],[0,0]]
+root = tk.Tk()
+selectregion = SelReg(root, list_vals)
+root.mainloop()
+
+#CHOOSE BEST FITS BASED ON USER SELECTED DATA
+
+mode = str(mode)
+Ec = float(Ec)
+sigma_Ec = float(sigma_Ec)
+peak_center = float(peak_center)
+sigma_peakcenter = float(sigma_peakcenter)
+
+np.set_printoptions(threshold=np.inf)
+
+#Initial Settings:
+stepsize = BE[0]-BE[1]
+
+abs_diff_functminR1 = lambda list_value : abs(list_value - xminR1)
+closest_minR1 = min(BE, key = abs_diff_functminR1)
+
+abs_diff_functminR2 = lambda list_value: abs(list_value - xminR2)
+closest_minR2 = min(BE, key = abs_diff_functminR2)
+
+abs_diff_functmaxR1 = lambda list_value: abs(list_value - xmaxR1)
+closest_maxR1 = min(BE, key = abs_diff_functmaxR1)
+
+abs_diff_functmaxR2 = lambda list_value: abs(list_value - xmaxR2)
+closest_maxR2 = min(BE, key = abs_diff_functmaxR2)
+
+xminR1_index = BE.index(closest_minR1)
+xmaxR1_index = BE.index(closest_maxR1)
+xminR2_index = BE.index(closest_minR2)
+xmaxR2_index = BE.index(closest_maxR2)
+
+
+#Find better center values
+s = round((BE[0]-BE[1]),3)
+#r = float(intervalselection)
+r = 0.5
+interval = int(r/s)
+
+#Loops to Collect Linear Fit Values:
+errslopes1 = []
+slopes1 = []
+errslopes2 = []
+slopes2 = []
+errbs1 = []
+bs1 = []
+errbs2 = []
+bs2 = []
+
+if mode == 'XPS':
+    center_index1 = xmaxR1_index - 5
+    final_index1 = xminR1_index + 5
+    center_index2 = xmaxR2_index - 5
+    final_index2 = xminR2_index +5
+
+if mode == 'UPS':
+    center_index1 = xmaxR1_index - 25
+    final_index1 = xminR1_index + 25
+    center_index2 = xmaxR2_index - 25
+    final_index2 = xminR2_index + 25
+
+#Iterate Through Entire User-Selected Range and Make Lists of Slopes and Y-Intercepts of Every Possible Line of Fit
+while center_index1 <= final_index1:
+    centerminus1 = center_index1 - interval
+    centerplus1 = center_index1 + interval
+    linfitBE1 = BE[centerminus1:(centerplus1)]
+    savgol_interval1 = savgol_filter(BE[centerminus1:centerplus1], 3, 1)
+    linfitCPS1 = CPS[centerminus1:(centerplus1)]
+    value1, error1 = np.polyfit(savgol_interval1, linfitCPS1, 1, cov=True)
+    errslopes1.append(np.sqrt(error1[0][0]))
+    slopes1.append(value1[0])
+    errbs1.append(np.sqrt(error1[1][1]))
+    bs1.append(value1[1])
+    center_index1 +=1
+while center_index2 <=final_index2:
+    centerminus2 = center_index2 - interval
+    centerplus2 = center_index2 + interval
+    linfitBE2 = BE[centerminus2:(centerplus2)]
+    savgol_interval2 = savgol_filter(BE[centerminus2:centerplus2],3,1)
+    linfitCPS2 = CPS[centerminus2:(centerplus2)]
+    value2, error2 = np.polyfit(savgol_interval2, linfitCPS2, 1, cov=True)
+    errslopes2.append(np.sqrt(error2[0][0]))
+    slopes2.append(value2[0])
+    errbs2.append(np.sqrt(error2[1][1]))
+    bs2.append(value2[1])
+    center_index2 +=1
+line1 = np.array((slopes1, errslopes1, bs1, errbs1)).T
+line2 = np.array((slopes2, errslopes2, bs2, errbs2)).T
+
+#Find Intersection Point Between Every Possible Set of 2 Lines Generated Above And Calculate Error Associated With Each:
+n = 0
+g = 0
+sigmax = []
+intercepts = []
+newslopes1 = []
+newslopes2 = [] 
+newbs1 = []
+newbs2 = []
+newslopes1err = []
+newslopes2err = []
+newbs1err = []
+newbs2err = []
+while n < len(line1):
+    m1 = slopes1[n]
+    sigmam1 = errslopes1[n]
+    b1 = bs1[n]
+    sigmab1 = errbs1[n]
+    while g < len(line2):
+        m2 = slopes2[g]
+        sigmam2 = errslopes2[g]
+        b2 = bs2[g]
+        sigmab2 = errbs2[g]
+        intercepts.append((b2-b1)/(m1-m2))
+        sigx = ((((sigmab2**2)*(1/(m1-m2))**2) + ((sigmab1)**2)*(-1/(m1-m2))**2) + ((sigmam1)**2)*(-(b2-b1)/(m1-m2)**2)**2)+(((sigmam2**2)*((b2-b1)/(m1-m2)**2)**2))
+        sigmax.append(sigx)
+        newslopes1.append(m1)
+        newslopes2.append(m2)
+        newbs1.append(b1)
+        newbs2.append(b2)
+        newslopes1err.append(sigmam1)
+        newslopes2err.append(sigmam2)
+        newbs1err.append(sigmab1)
+        newbs2err.append(sigmab2)
+        g +=1
+    g = 0
+    n +=1
+min_sigmax_index = sigmax.index(min(sigmax))
+best_intercept = intercepts[min_sigmax_index]
+sqrt_sigmax_bestint = math.sqrt(sigmax[min_sigmax_index])
+
+#OUTPUTS WINDOW, PLOTS, AND OPTIONS TO SAVE DATA
+
+outputswindow = tk.Tk()
+outputswindow.geometry('1300x500')
+outputswindow.title('Band Gap and VBM Calculator')
+TopFr = Frame(outputswindow)
+TopFr.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+BotFr = Frame(outputswindow)
+BotFr.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+OutputButtonFrame = Frame(TopFr)
+OutputButtonFrame.pack(anchor = N, side = 'left', padx = 10, pady = 5)
+Gr1Frame = Frame(TopFr)
+Gr1Frame.pack(anchor = N, side = 'left', padx = 10, pady = 5)
+Gr2Frame = Frame(TopFr)
+Gr2Frame.pack(anchor = N, side = 'left', padx = 10, pady = 5)
+SaveAllButtonFrame = Frame(BotFr)
+SaveAllButtonFrame.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+OutputButtonRow1 = Frame(OutputButtonFrame)
+OutputButtonRow1.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+OutputButtonRow2 = Frame(OutputButtonFrame)
+OutputButtonRow2.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+Gr1Row1 = Frame(Gr1Frame)
+Gr1Row1.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+Gr1Row2 = Frame(Gr1Frame)
+Gr1Row2.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+Gr1Row3 = Frame(Gr1Frame)
+Gr1Row3.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+Gr2Row1 = Frame(Gr2Frame)
+Gr2Row1.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+Gr2Row2 = Frame(Gr2Frame)
+Gr2Row2.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+Gr2Row3 = Frame(Gr2Frame)
+Gr2Row3.pack(anchor = N, side = 'top', padx = 5, pady = 5)
+
+#Plot Lines With Lowest-Error Intercept and Standard Deviation of All Intercepts Including Theirs
+if mode == 'UPS' and Ec != 0:
+    sigma_band_gap = math.sqrt(((sqrt_sigmax_bestint)**2*(best_intercept)**2)+((sigma_Ec)**2*(Ec)**2))
+    band_gap = (best_intercept - Ec)
+if mode == 'XPS' and peak_center != 0:
+    band_gap = (peak_center - best_intercept)
+    sigma_band_gap = math.sqrt(((sqrt_sigmax_bestint)**2*(best_intercept)**2)+((sigma_peakcenter)**2*(peak_center)**2))
+y_coord = newslopes1[min_sigmax_index]*best_intercept + newbs1[min_sigmax_index]
+pltline1 = []
+pltline2 = []
+for t in BE:
+    plotline1 = newslopes1[min_sigmax_index]*t + newbs1[min_sigmax_index]
+    pltline1.append(plotline1)
+    plotline2 = newslopes2[min_sigmax_index]*t + newbs2[min_sigmax_index]
+    pltline2.append(plotline2)
+
+lower_bound_line1_bestline = BE[xminR1_index-slopes1.index(newslopes1[min_sigmax_index])]
+upper_bound_line1_bestline = BE[xmaxR1_index+slopes1.index(newslopes1[min_sigmax_index])]
+lower_bound_line2_bestline = BE[xminR2_index-slopes2.index(newslopes2[min_sigmax_index])]
+upper_bound_line2_bestline = BE[xmaxR2_index+slopes2.index(newslopes2[min_sigmax_index])]
+
+
+newslopes1[min_sigmax_index]
+
+
+#Scale x and y limits
+BE_lim = BE[-1]
+BE_max = BE[0]
+CPS_lim = min(CPS) 
+CPS_max = max(CPS)
+
+#Make Plots
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+mainplot = Figure()
+amainplot = mainplot.add_subplot(111)
+amainplot.scatter(BE,CPS, color = 'black', s = 0.25)
+amainplot.plot(BE, pltline1, '--', color = 'red', label = 'y1 = ({} +/- {}) X + ({} +/- {})'.format("%.4g" %newslopes1[min_sigmax_index], "%.4g" %newslopes1err[min_sigmax_index], "%.4g" %newbs1[min_sigmax_index], "%.4g" %newbs1err[min_sigmax_index] ))
+amainplot.plot(BE, pltline2, color = "red", label = 'y2 = ({} +/- {}) X + ({} +/- {})'.format("%.4g" %newslopes2[min_sigmax_index], "%.4g" %newslopes2err[min_sigmax_index], "%.4g" %newbs2[min_sigmax_index], "%.4g" %newbs2err[min_sigmax_index] ))
+if mode == 'UPS':
+    amainplot.plot(best_intercept, y_coord, '*', color = 'green', label = 'VBM = {} +/- {} eV'.format("%.4g" %best_intercept, "%.4g" %sqrt_sigmax_bestint ))
+elif mode == 'XPS':
+    amainplot.plot(best_intercept, y_coord, '*', color = 'green', label = 'Band gap = {} +/- {} eV'.format("%.4g" %best_intercept, "%.4g" %sqrt_sigmax_bestint ))
+amainplot.set_xlim([BE_lim - 0.5, BE_max +0.5])
+amainplot.set_ylim([-0.25, CPS_max + 0.25])
+amainplot.legend(loc = 'upper left')
+amainplot.set_xlabel('Binding Energy (eV)', font = 'Times New Roman', fontsize=10)
+amainplot.set_ylabel('CPS', font = 'Times New Roman', fontsize=10)
+amainplot.invert_xaxis()
+amainplot.xaxis.set_minor_locator(MultipleLocator(1))
+amainplot.yaxis.set_minor_locator(MultipleLocator(1))
+amainplot.axvline(x = upper_bound_line1_bestline, linestyle = '--', linewidth = 0.75, color = 'grey')
+amainplot.axvline(x = lower_bound_line1_bestline, linestyle = '--', linewidth = 0.75, color = 'grey')
+amainplot.axvline(x = upper_bound_line2_bestline, linestyle = '--', linewidth = 0.75, color = 'grey')
+amainplot.axvline(x = lower_bound_line2_bestline, linestyle = '--', linewidth = 0.75, color = 'grey')
+amainplot.axvspan(upper_bound_line1_bestline, lower_bound_line1_bestline, alpha=0.1, color = 'yellow')
+amainplot.axvspan(upper_bound_line2_bestline, lower_bound_line2_bestline, alpha = 0.1, color = 'yellow')
+if (mode == 'UPS' and Ec != 0 and sigma_Ec != 0) or (mode == 'XPS' and peak_center!=0 and sigma_peakcenter !=0):
+    amainplot.set_title('Band gap = {} +/- {} eV\n'.format("%.4g" %band_gap, "%.4g" %sigma_band_gap))
+if (mode == 'UPS' and Ec != 0 and sigma_Ec == 0) or (mode =='XPS'and peak_center!=0 and sigma_peakcenter == 0):
+    amainplot.set_title('Band gap = {} eV\n'.format("%.4g" %band_gap))
+canvas = FigureCanvasTkAgg(mainplot, master=Gr1Row1)
+canvas.get_tk_widget().pack(padx = 5, pady = 5, anchor = N, side = 'top')
+canvas.draw()
+fig = amainplot.get_figure()
+
+
+stddevplot = Figure()
+cstddevplot = stddevplot.add_subplot(111)
+cstddevplot.scatter(intercepts, np.sqrt(sigmax), marker =  'o', s = 0.5, color = 'black')
+cstddevplot.set_ylabel("Intersection Point", font = 'Times New Roman', fontsize=10)
+cstddevplot.set_xlabel("Standard Deviation of Intersection Point", font = 'Times New Roman', fontsize=10)
+cstddevplot.plot(best_intercept, math.sqrt(sigmax[min_sigmax_index]), marker= "X", markersize = 5, color = 'red', label = '({} , {})'.format("%.4g" %best_intercept, "%.4g" %math.sqrt(sigmax[min_sigmax_index])))
+cstddevplot.legend(loc = 'best')
+canvas2= FigureCanvasTkAgg(stddevplot, master=Gr2Row1)
+canvas2.get_tk_widget().pack(padx = 5, pady = 5, anchor = N, side = 'top')
+canvas2.draw()
+figstddev = cstddevplot.get_figure()
+
+
+intercepts_array = np.array((intercepts, sigmax)).T
+
+
+
+#EXPORT DATA AS TEXT FILE
+header1 = 'y1 = ({} +/- {}) X + ({} +/- {})\n'.format("%.4g" %newslopes1[min_sigmax_index], "%.4g" %newslopes1err[min_sigmax_index], "%.4g" %newbs1[min_sigmax_index], "%.4g" %newbs1err[min_sigmax_index])
+header2 = 'y2 = ({} +/- {}) X + ({} +/- {})\n'.format("%.4g" %newslopes2[min_sigmax_index], "%.4g" %newslopes2err[min_sigmax_index], "%.4g" %newbs2[min_sigmax_index], "%.4g" %newbs2err[min_sigmax_index])
+header3 = 'best intercept = {}, standard deviation = {}\n'.format(best_intercept, math.sqrt(sigmax[min_sigmax_index]))
+if (mode == 'UPS' and Ec != 0 and sigma_Ec != 0) or (mode == 'XPS' and peak_center!=0 and sigma_peakcenter !=0):
+    header4 = 'Band gap = {} +/- {} eV\n'.format("%.4g" %band_gap, "%.4g" %sigma_band_gap)
+if (mode == 'UPS' and Ec != 0 and sigma_Ec == 0) or (mode =='XPS'and peak_center!=0 and sigma_peakcenter == 0):
+    header4 = 'Band gap = {} eV\n'.format("%.4g" %band_gap)
+if Ec ==0 and peak_center ==0:
+    header4 = '\n'
+tk.Label(OutputButtonRow1, text = 'Save Output File As:', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+e0 = tk.Entry(OutputButtonRow1, width = 20)
+e0.pack(padx = 5, pady = 5, anchor = N, side = 'left')
+def saveoutputfile():
+    global completeoutputfilename
+    global outputfile
+    outputfilename = filedialog.askdirectory()
+    outputfilename2 = e0.get()
+    completeoutputfilename = os.path.join(outputfilename, outputfilename2+'.txt')
+    outputfile = open(completeoutputfilename, 'w')
+    outputfile.write(header1)
+    outputfile.write(header2)
+    outputfile.write(header3)
+    outputfile.write(header4)
+    for row in intercepts_array:
+        row = str(row)
+        row = row.strip('[]')
+        row = row + '\n'
+        outputfile.write(row)
+    outputfile.close()
+tk.Label(OutputButtonRow2, text = 'Save Output File to Directory:', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+saveoutputfilebutton = tk.Button(OutputButtonRow2, text = "Browse", font = ("Times New Roman bold", 10), bg = "lightblue", command = saveoutputfile).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+
+tk.Label(Gr1Row2, text = 'Save As:', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+e1 = tk.Entry(Gr1Row2, width = 20)
+tk.Label(Gr1Row3, text = 'Save to Directory:', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+
+e1.pack(padx = 5, pady = 5, anchor = N, side = 'left')
+def savemainplot():
+    mainplotname = filedialog.askdirectory()
+    mainplotname2 = e1.get()
+    completename = os.path.join(mainplotname, mainplotname2+'.png')
+    fig.savefig(completename)
+savemainplotbutton = tk.Button(Gr1Row3, text = 'Browse', font = ('Times New Roman bold', 10), bg = 'lightblue', command = savemainplot).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+
+tk.Label(Gr2Row2, text = '  Save As  :', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+e2 = tk.Entry(Gr2Row2, width = 20)
+ 
+e2.pack(padx = 5, pady = 5, anchor = N, side = 'left')
+tk.Label(Gr2Row3, text = 'Save to Directory:', font = ("Times New Roman bold", 10)).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+
+def savestddevplot():
+    global completenamestddev
+    stddevplotname = filedialog.askdirectory()
+    stddevplotname2 = e2.get()
+    completenamestddev = os.path.join(stddevplotname, stddevplotname2+'.png')
+    figstddev.savefig(completenamestddev)
+
+savestddevplotbutton = tk.Button(Gr2Row3, text = 'Browse', font = ('Times New Roman bold', 10), bg = 'lightblue', command = savestddevplot).pack(padx = 5, pady = 5, anchor = N, side = 'left')
+
+outputswindow.mainloop()
